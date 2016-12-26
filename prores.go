@@ -46,8 +46,8 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   got_picture := 0
   res  = ctx.AvcodecDecodeVideo2( (*avcodec.Frame)(unsafe.Pointer(videoFrame)), &got_picture, packet )
 
-  fmt.Printf("Got picture: %d\n", got_picture)
-  fmt.Printf("%#v\n",*videoFrame)
+  //fmt.Printf("Got picture: %d\n", got_picture)
+  //fmt.Printf("%#v\n",*videoFrame)
 
   //width,height := 1920,1080 //videoFrame.width, videoFrame.height
 
@@ -62,18 +62,17 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
                                   width, height, swscale.PixelFormat(dest_fmt),
                                   flags, nil, nil, nil )
   if ctxtSws == nil { panic("Couldn't open swscale context")}
+  defer swscale.SwsFreecontext( ctxtSws )
 
   videoFrameRgb := avutil.AvFrameAlloc()
   if videoFrameRgb == nil { panic("Couldn't allocate destination frame") }
+  //defer avutil.AvFrameFree( videoFrameRgb )   // This causes a segfault
 
   videoFrameRgb.Width = ctx.Width
   videoFrameRgb.Height = ctx.Height
   videoFrameRgb.Format = dest_fmt
 
-  fmt.Println(videoFrameRgb )
   avutil.AvFrameGetBuffer( videoFrameRgb, 8)
-  fmt.Println(videoFrameRgb )
-
 
   swscale.SwsScale( ctxtSws, videoFrame.Data,
                              videoFrame.Linesize,
@@ -81,19 +80,20 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
                              videoFrameRgb.Data,
                              videoFrameRgb.Linesize )
 
-  fmt.Printf("%#v\n",*videoFrameRgb)
+  //fmt.Printf("%#v\n",*videoFrameRgb)
 
-  // Convert videoFrameRgb to Go image?
-  img := image.NewRGBA( image.Rect(0,0,width,height) )
-
-
+  // nb. C.GoBytes makes a copy of the data
   rgb_data :=  C.GoBytes(unsafe.Pointer(videoFrameRgb.Data[0]), C.int(videoFrameRgb.Width * videoFrameRgb.Height * 4))
   //pixels := make([]byte, videoFrameRgb.Width * videoFrameRgb.Height * 4 )
 
   reader := bytes.NewReader( rgb_data )
+  img := image.NewRGBA( image.Rect(0,0,width,height) )
   err := binary.Read( reader, binary.LittleEndian, &img.Pix)
 
   if err != nil { panic(fmt.Sprintf("error on binary read: %s", err.Error() ))}
+
+  //TODO:  Need to clean up all of my libav structures
+avutil.AvFrameFree( videoFrameRgb )
 
   return img, nil
 }
