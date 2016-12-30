@@ -13,7 +13,12 @@ import "bytes"
 import "C"
 import "unsafe"
 
-
+// DecodeProRes takes a byte slice containing a single ProRes frame, and uses goav (w/ ffmpeg) 
+// to produce a Go RGBA image.   This function requires that the frame width and height be known
+// in advance.   It returns a pointer to the new image if successful, or nil and an error if
+// unsuccessful.
+//
+// Note this function is still pretty rough.
 func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
 
   avcodec.AvcodecRegisterAll()
