@@ -1,5 +1,7 @@
 # go-prores-ffmpeg
 
+[![Travis CI](https://travis-ci.org/amarburg/go-prores-ffmpeg.svg?branch=master)](https://travis-ci.org/amarburg/go-prores-ffmpeg)
+
 Sample code which uses [goav](https://github.com/amarburg/goav) to decode a byte slice containing a ProRes file into a Go `Image`.
 
 ## TODO
