@@ -22,7 +22,6 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
 
   if prores.AvCodecIsDecoder() != 1 { panic("Isn't a decoder")}
 
-
   ctx := prores.AvcodecAllocContext3()
   if ctx == nil { panic("Couldn't allocate context") }
 
@@ -53,9 +52,9 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
 
   if got_picture == 0 { panic(fmt.Sprintf("Didn't get a picture, err = %04x", -res)) }
 
-  fmt.Printf("Image is %d x %d, format %d\n", width, height, int(ctx.Pix_fmt) )
+  //fmt.Printf("Image is %d x %d, format %d\n", width, height, int(ctx.Pix_fmt) )
 
-  // Convert frame to RGB
+  // Convert frame to RGBA
   dest_fmt := int32(avcodec.AV_PIX_FMT_RGBA)
   flags := 0
   ctxtSws := swscale.SwsGetcontext(width, height, swscale.PixelFormat(ctx.Pix_fmt),
@@ -92,8 +91,7 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
 
   if err != nil { panic(fmt.Sprintf("error on binary read: %s", err.Error() ))}
 
-  //TODO:  Need to clean up all of my libav structures
-avutil.AvFrameFree( videoFrameRgb )
+  //TODO:  Need to clean up all of my libav structures (?)
 
   return img, nil
 }
