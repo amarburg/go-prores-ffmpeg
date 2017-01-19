@@ -1,7 +1,7 @@
 # go-prores-ffmpeg
 
 [![GoDoc](https://godoc.org/github.com/amarburg/go-prores-ffmpeg?status.svg)](https://godoc.org/github.com/amarburg/go-prores-ffmpeg)
-[![Travis CI](https://travis-ci.org/amarburg/go-prores-ffmpeg.svg?branch=master)](https://travis-ci.org/amarburg/go-prores-ffmpeg)
+[![wercker status](https://app.wercker.com/status/3effa55de012feb5f91bc9c66c115fd2/s/master "wercker status")](https://app.wercker.com/project/byKey/3effa55de012feb5f91bc9c66c115fd2)
 
 Sample code which uses [goav](https://github.com/amarburg/goav) to decode a byte slice containing a ProRes file into a Go `Image`.
 
