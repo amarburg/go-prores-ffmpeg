@@ -1,0 +1,26 @@
+##
+## Need FFMPEG to test.
+box: amarburg/golang-ffmpeg:wheezy-1.8
+
+build:
+
+  steps:
+    - setup-go-workspace
+
+    # Gets the dependencies
+    - script:
+        name: go get
+        code: |
+          go get -t
+
+    # Build the project
+    - script:
+        name: go build
+        code: |
+          go build ./...
+
+    # Test the project
+    - script:
+        name: go test
+        code: |
+          go test ./...
