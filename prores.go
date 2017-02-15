@@ -13,6 +13,8 @@ import "bytes"
 import "C"
 import "unsafe"
 
+import "errors"
+
 // Global, boo
 var prores *avcodec.Codec
 
@@ -37,11 +39,15 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   if prores == nil { panic("Hm, couldn't initialize ProRes") }
 
   ctx := prores.AvcodecAllocContext3()
-  if ctx == nil { panic("Couldn't allocate context") }
+  if ctx == nil {
+    return nil, errors.New("Couldn't allocate context")
+  }
   defer avcodec.AvcodecFreeContext( ctx )
 
   res := ctx.AvcodecOpen2(prores,nil)
-  if res < 0 { panic(fmt.Sprintf("Couldn't open context (%d)",res))}
+  if res < 0 {
+    return nil, errors.New(fmt.Sprintf("Couldn't open context (%d)",res))
+  }
 
   packet := avcodec.AvPacketAlloc()
   packet.AvInitPacket()
@@ -59,7 +65,9 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
 
   // And a frame to receive the data
   videoFrame := avutil.AvFrameAlloc()
-  if videoFrame == nil { panic("Couldn't allocate destination frame") }
+  if videoFrame == nil {
+    return nil, errors.New("Couldn't allocate destination frame")
+   }
   //defer avutil.AvFrameUnref( videoFrame )
   defer avutil.AvFrameFree( videoFrame) // why does this segfault?
 
@@ -74,7 +82,9 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
 
   //width,height := 1920,1080 //videoFrame.width, videoFrame.height
 
-  if got_picture == 0 { panic(fmt.Sprintf("Didn't get a picture, err = %04x", -res)) }
+  if got_picture == 0 {
+    return nil, errors.New(fmt.Sprintf("Didn't get a picture, err = %04x", -res))
+  }
 
   //fmt.Printf("Image is %d x %d, format %d\n", width, height, int(ctx.Pix_fmt) )
 
@@ -84,10 +94,14 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   ctxtSws := swscale.SwsGetcontext(width, height, swscale.PixelFormat(ctx.Pix_fmt),
                                   width, height, swscale.PixelFormat(dest_fmt),
                                   flags, nil, nil, nil )
-  if ctxtSws == nil { panic("Couldn't open swscale context")}
+  if ctxtSws == nil {
+    return nil, errors.New("Couldn't open swscale context")
+  }
 
   videoFrameRgb := avutil.AvFrameAlloc()
-  if videoFrameRgb == nil { panic("Couldn't allocate destination frame") }
+  if videoFrameRgb == nil {
+    return nil, errors.New("Couldn't allocate destination frame")
+  }
   defer avutil.AvFrameFree( videoFrameRgb ) // why does this segfault?
 
   videoFrameRgb.Width = ctx.Width
@@ -95,7 +109,7 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   videoFrameRgb.Format = dest_fmt
 
   if res := avutil.AvFrameGetBuffer( videoFrameRgb, 8); res != 0 {
-    panic(fmt.Sprintf("Error getting buffer %d", res))
+    return nil, fmt.Errorf("Error getting buffer %d", res)
   }
 
   swscale.SwsScale( ctxtSws, videoFrame.Data,
@@ -116,9 +130,9 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   img := image.NewRGBA( image.Rect(0,0,width,height) )
   err := binary.Read( reader, binary.LittleEndian, &img.Pix  )
 
-  if err != nil { panic(fmt.Sprintf("error on binary read: %s", err.Error() ))}
-
-  //TODO:  Need to clean up all of my libav structures (?)
+  if err != nil {
+    return nil, fmt.Errorf("error on binary read: %s", err.Error() )
+  }
 
   return img, nil
 }
