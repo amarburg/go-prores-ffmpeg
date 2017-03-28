@@ -80,22 +80,16 @@ func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
 	ctx.SetWidth(width)
 	ctx.SetHeight(height)
 
+  // TODO.  Error handling
 	res = ctx.SendPacket(packet)
+  if res != 0 {
+		return nil, errors.New(fmt.Sprintf("Error sending packet do decoder, err = %04x", -res))
+	}
 
-	// TODO.   May receive multiple frames from a packet, need to loop
+	// TODO.   May receive multiple frames from a packet, need to loop?
 	res = ctx.ReceiveFrame(videoFrame)
-
-	// TODO:  Handle error
-
-	//ctx.AvcodecDecodeVideo2( (*avcodec.Frame)(unsafe.Pointer(videoFrame)), &got_picture, packet )
-
-	//fmt.Printf("Got picture: %d\n", got_picture)
-	//fmt.Printf("%#v\n",*videoFrame)
-
-	//width,height := 1920,1080 //videoFrame.width, videoFrame.height
-
 	if res != 0 {
-		return nil, errors.New(fmt.Sprintf("Didn't get a picture, err = %04x", -res))
+		return nil, errors.New(fmt.Sprintf("Error receiving frame from decoder, err = %04x", -res))
 	}
 
 	//fmt.Printf("Image is %d x %d, format %d\n", width, height, int(ctx.Pix_fmt) )
