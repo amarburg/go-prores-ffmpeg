@@ -69,13 +69,19 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
     return nil, errors.New("Couldn't allocate destination frame")
    }
   //defer avutil.AvFrameUnref( videoFrame )
-  defer avutil.AvFrameFree( videoFrame) // why does this segfault?
+  defer avutil.AvFrameFree( videoFrame ) // why does this segfault?
 
-  ctx.Width = int32(width)
-  ctx.Height = int32(height)
+  ctx.SetWidth(width)
+  ctx.SetHeight(height)
 
-  got_picture := 0
-  res  = ctx.AvcodecDecodeVideo2( (*avcodec.Frame)(unsafe.Pointer(videoFrame)), &got_picture, packet )
+  res  = ctx.SendPacket( packet );
+
+  // TODO.   May receive multiple frames from a packet, need to loop
+  got_picture := ctx.ReceiveFrame( videoFrame );
+
+  // TODO:  Handle error
+
+  //ctx.AvcodecDecodeVideo2( (*avcodec.Frame)(unsafe.Pointer(videoFrame)), &got_picture, packet )
 
   //fmt.Printf("Got picture: %d\n", got_picture)
   //fmt.Printf("%#v\n",*videoFrame)
@@ -89,10 +95,11 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   //fmt.Printf("Image is %d x %d, format %d\n", width, height, int(ctx.Pix_fmt) )
 
   // Convert frame to RGBA
-  dest_fmt := int32(avcodec.AV_PIX_FMT_RGBA)
+ outputFmt := avcodec.AV_PIX_FMT_RGBA
+  //dest_fmt := int32(avcodec.AV_PIX_FMT_RGBA)
   flags := 0
-  ctxtSws := swscale.SwsGetcontext(width, height, swscale.PixelFormat(ctx.Pix_fmt),
-                                  width, height, swscale.PixelFormat(dest_fmt),
+  ctxtSws := swscale.SwsGetcontext(width, height, swscale.PixelFormat(ctx.PixFmt()),
+                                  width, height, swscale.PixelFormat(outputFmt),
                                   flags, nil, nil, nil )
   if ctxtSws == nil {
     return nil, errors.New("Couldn't open swscale context")
@@ -104,9 +111,9 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   }
   defer avutil.AvFrameFree( videoFrameRgb ) // why does this segfault?
 
-  videoFrameRgb.Width = ctx.Width
-  videoFrameRgb.Height = ctx.Height
-  videoFrameRgb.Format = dest_fmt
+  videoFrameRgb.SetWidth(ctx.Width())
+  videoFrameRgb.SetHeight(ctx.Height())
+  videoFrameRgb.SetFormat( avutil.PixelFormat(outputFmt) )
 
   if res := avutil.AvFrameGetBuffer( videoFrameRgb, 8); res != 0 {
     return nil, fmt.Errorf("Error getting buffer %d", res)
@@ -122,7 +129,8 @@ func DecodeProRes( buf []byte, width int, height int ) (* image.RGBA, error) {
   //fmt.Printf("%#v\n",*videoFrameRgb)
 
   // nb. C.GoBytes makes a copy of the data
-  rgb_data :=  C.GoBytes(unsafe.Pointer(videoFrameRgb.Data[0]), C.int(videoFrameRgb.Width * videoFrameRgb.Height * 4))
+  rgb_data :=  C.GoBytes(unsafe.Pointer(videoFrameRgb.Data[0]),
+                          C.int(videoFrameRgb.Width() * videoFrameRgb.Height() * 4))
   //pixels := make([]byte, videoFrameRgb.Width * videoFrameRgb.Height * 4 )
 
   reader := bytes.NewReader( rgb_data )
