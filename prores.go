@@ -80,9 +80,9 @@ func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
 	ctx.SetWidth(width)
 	ctx.SetHeight(height)
 
-  // TODO.  Error handling
+	// TODO.  Error handling
 	res = ctx.SendPacket(packet)
-  if res != 0 {
+	if res != 0 {
 		return nil, errors.New(fmt.Sprintf("Error sending packet to decoder, err = %04x", -res))
 	}
 
