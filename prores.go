@@ -41,7 +41,7 @@ func init() {
 func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
 
 	if prores == nil {
-		panic("Hm, couldn't initialize ProRes")
+		return nil, fmt.Errorf("Hm, couldn't initialize ProRes")
 	}
 
 	ctx := prores.AvcodecAllocContext3()
@@ -83,7 +83,7 @@ func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
   // TODO.  Error handling
 	res = ctx.SendPacket(packet)
   if res != 0 {
-		return nil, errors.New(fmt.Sprintf("Error sending packet do decoder, err = %04x", -res))
+		return nil, errors.New(fmt.Sprintf("Error sending packet to decoder, err = %04x", -res))
 	}
 
 	// TODO.   May receive multiple frames from a packet, need to loop?
