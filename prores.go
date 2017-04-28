@@ -7,8 +7,8 @@ import "github.com/amarburg/goav/swscale"
 
 import "image"
 
-import "encoding/binary"
-import "bytes"
+// import "encoding/binary"
+// import "bytes"
 
 import "C"
 import "unsafe"
@@ -41,7 +41,7 @@ func init() {
 func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
 
 	if prores == nil {
-		return nil, fmt.Errorf("Hm, couldn't initialize ProRes")
+		return nil, fmt.Errorf("Couldn't initialize ProRes")
 	}
 
 	ctx := prores.AvcodecAllocContext3()
@@ -128,19 +128,26 @@ func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
 
 	//fmt.Printf("%#v\n",*videoFrameRgb)
 
-	// nb. C.GoBytes makes a copy of the data
-	rgb_data := C.GoBytes(unsafe.Pointer(videoFrameRgb.Data[0]),
-		C.int(videoFrameRgb.Width()*videoFrameRgb.Height()*4))
+
 	//pixels := make([]byte, videoFrameRgb.Width * videoFrameRgb.Height * 4 )
 
-	reader := bytes.NewReader(rgb_data)
+
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	err := binary.Read(reader, binary.LittleEndian, &img.Pix)
 
-	if err != nil {
-		return nil, fmt.Errorf("error on binary read: %s", err.Error())
-	}
+	// This is incredibly slow
+	//	reader := bytes.NewReader(rgb_data)
+	//err := binary.Read(reader, binary.LittleEndian, &img.Pix)
+
+	// nb. C.GoBytes makes a copy of the data
+	// TODO: Endianness?
+	img.Pix = C.GoBytes(unsafe.Pointer(videoFrameRgb.Data[0]),
+		                    C.int(videoFrameRgb.Width()*videoFrameRgb.Height()*4))
+
+
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error on binary read: %s", err.Error())
+	// }
 
 	return img, nil
 }
