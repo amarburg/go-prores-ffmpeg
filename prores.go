@@ -38,7 +38,7 @@ func init() {
 // unsuccessful.
 //
 // Note this function is still pretty rough.
-func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
+func DecodeProRes(buf []byte, width int, height int) (*image.NRGBA, error) {
 
 	if prores == nil {
 		return nil, fmt.Errorf("Couldn't initialize ProRes")
@@ -133,7 +133,7 @@ func DecodeProRes(buf []byte, width int, height int) (*image.RGBA, error) {
 
 
 
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	img := image.NewNRGBA(image.Rect(0, 0, width, height))
 
 	// This is incredibly slow
 	//	reader := bytes.NewReader(rgb_data)
